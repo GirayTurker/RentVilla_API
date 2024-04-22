@@ -527,8 +527,7 @@ namespace RentVilla_API.Controllers
         }
 
         private byte[] ComputeHashValue(HMACSHA512 hmac, string objAndParam)
-        {
-            
+        {           
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(objAndParam));
             if(computedHash == null) 
             {
