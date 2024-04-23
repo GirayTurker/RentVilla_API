@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using RentVilla_API.Helpers;
+using System.ComponentModel.DataAnnotations;
 
 namespace RentVilla_API.Entities
 {
@@ -33,5 +34,7 @@ namespace RentVilla_API.Entities
 
         [Required]
         public string City { get; set; }
+
+        public bool ShouldSerializeErrorMessages() => JsonSerialization.ShouldSerializeProperty(this, nameof(AddressLine2));
     }
 }
