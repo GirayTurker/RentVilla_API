@@ -10,13 +10,12 @@ namespace RentVilla_API.Interfaces
 
         Task<bool> SaveAllAsnync();
 
-        Task<IEnumerable<AppUser>> GetUsersAsync();
+        //Task<IEnumerable<AppUser>> GetUsersAsync();
 
         Task<IEnumerable<AppUserDTO>> GetAppUsersDTOAsync();
 
         Task<AppUser> GetUserByIdAsync (int id);
 
-        Task<AppUserDTO> GetAppUserDTOByIdAsync(int id);
 
         Task<AppUser> UpdateAsync(AppUser entity);
 

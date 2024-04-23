@@ -1,4 +1,6 @@
-﻿namespace RentVilla_API.DTOs
+﻿using RentVilla_API.Helpers;
+
+namespace RentVilla_API.DTOs
 {
     public class AppUserDTO
     {
@@ -19,5 +21,7 @@
         public string State { get; set; }
 
         public string City { get; set; }
+
+        public bool ShouldSerializeErrorMessages() => JsonSerialization.ShouldSerializeProperty(this, nameof(AddressLine2));
     }
 }

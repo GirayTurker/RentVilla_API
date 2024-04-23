@@ -508,23 +508,78 @@ namespace RentVilla_API.Controllers
                 return BadRequest(_response);
             }
         }
-
-
-        //[HttpGet("AppUserAdress")]
-        //public async Task<ActionResult<AppUsersAddress>> GetAddress(int appUserId)
-        //{
-        //    var userAddress = await _appDBContext.UsersAddress.Where(user => user.AppUserID == appUserId).FirstOrDefaultAsync();
-
-        //    return userAddress;
-        //}
   
 
         [HttpGet("AppUsers")]
-        public async Task<ActionResult<IEnumerable<AppUserDTO>>> GetAppUsers()
+        public async Task<ActionResult<IEnumerable<APIResponse>>> GetAppUsers()
         {
             var usersDTO = await _userRepository.GetAppUsersDTOAsync();
+
+            if (usersDTO == null)
+            {
+                _response.StatusCode = HttpStatusCode.NotFound;
+                _response.ResponseIsSuccessfull = false;
+                _response.ErrorMessages.Add("User NOT FOUND!");
+                _loggerDev.Log($"Get App Users: NO User Found!!!", "error");
+                return NotFound(_response);
+            }
+
             return Ok(usersDTO);
         }
+
+
+        [HttpGet("SearchAppUsers")]
+        public async Task<ActionResult<APIResponse>> GetAppUsers( string searchByUserNameOrEmail = null)
+        {
+            // Retrieve all users
+            var usersDTO = await _userRepository.GetAppUsersDTOAsync();
+
+            // If no search term is provided, return all users
+            if (string.IsNullOrWhiteSpace(searchByUserNameOrEmail))
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.ResponseIsSuccessfull = false;
+                _response.ErrorMessages.Add("Search Term is Empty!");
+                _loggerDev.Log($"Search User: -- {searchByUserNameOrEmail} -- is EMPTY", "error");
+                return BadRequest(_response);
+            }
+
+            if (usersDTO == null)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.ResponseIsSuccessfull = false;
+                _response.ErrorMessages.Add("User NOT FOUND!");
+                _response.Result = null;
+                _loggerDev.Log($"Search User: -- {searchByUserNameOrEmail} -- NOT FOUND!", "error");
+                return BadRequest(_response);
+            }
+
+            try
+            {
+                // Otherwise, perform the search based on the provided search term
+                var filteredUsersDTO = usersDTO
+                    .Where(u =>
+                        u.UserName.Contains(searchByUserNameOrEmail, StringComparison.OrdinalIgnoreCase) || // Search by user name
+                        u.Email.Contains(searchByUserNameOrEmail, StringComparison.OrdinalIgnoreCase) // Search by email
+                    );
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.ResponseIsSuccessfull = true;
+                _response.ErrorMessages = null;
+                _response.Result = filteredUsersDTO;
+                _loggerDev.Log($"Search User: {searchByUserNameOrEmail} FOUND", "info");
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.ResponseIsSuccessfull = false;
+                _response.ErrorMessages.Add("Exception thrown to Logs!");
+                _loggerDev.Log(ex.Message.ToString(), "error");
+                return BadRequest(_response);
+            }
+        }
+
 
         private byte[] ComputeHashValue(HMACSHA512 hmac, string objAndParam)
         {           

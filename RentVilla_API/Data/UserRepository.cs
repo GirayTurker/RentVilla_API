@@ -31,29 +31,39 @@ namespace RentVilla_API.Data
                 Where(user => user.Id == id).SingleOrDefaultAsync();
         }
 
-        public async Task<AppUserDTO> GetAppUserDTOByIdAsync(int id)
-        { 
-            return await _appdbContext.Users
-                .Where(user=> user.Id == id)
-                .ProjectTo<AppUserDTO>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync();
-               
-        }
-
-        public async Task<IEnumerable<AppUser>> GetUsersAsync()
-        {
-            _logger.Log("User Repository: Retrive all AppUser from DataBase", "info");
-            return await _appdbContext.Users.ToListAsync();
-        }
+        //public async Task<IEnumerable<AppUser>> GetUsersAsync()
+        //{
+        //    _logger.Log("User Repository: Retrive all AppUser from DataBase", "info");
+        //    return await _appdbContext.Users.ToListAsync();
+        //}
 
         public async Task<IEnumerable<AppUserDTO>> GetAppUsersDTOAsync()
         {
-            _logger.Log("User Repository:  Check if All AppUserDTO retrive from DataBase", "info");
-           return await _appdbContext.Users
-                .ProjectTo<AppUserDTO>(_mapper.ConfigurationProvider)
+            _logger.Log("User Repository:  Check if All AppUserDTO retrieve from DataBase", "info");
+
+            // Project properties from Users table and UserAddresses table into AppUserDTO
+            var usersDTO = await _appdbContext.Users
+                .Include(u => u.UserAddresses)
+                .Select(u => new AppUserDTO
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    Email = u.Email,
+                    PhoneNumber = u.UserAddresses.FirstOrDefault().PhoneNumber,
+                    Created = u.Created,
+                    AddressLine1 = u.UserAddresses.FirstOrDefault().AddressLine1,
+                    AddressLine2 = u.UserAddresses.FirstOrDefault().AddressLine2,
+                    ZipCode = (short)u.UserAddresses.FirstOrDefault().ZipCode,
+                    State = u.UserAddresses.FirstOrDefault().State,
+                    City = u.UserAddresses.FirstOrDefault().City
+                    // Add more properties as needed
+                })
                 .ToListAsync();
+
+            return usersDTO;
         }
 
+        
         public async Task<bool> SaveAllAsnync()
         {
             _logger.Log("User Repository:  Check if Changes are saved successfully!!", "info");

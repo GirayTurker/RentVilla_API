@@ -11,6 +11,7 @@ namespace RentVilla_API.Helpers
             CreateMap<AppUser, AppUserDTO>().ReverseMap();
             CreateMap<RegisterDTO, AppUser>().ReverseMap();
             CreateMap<AppUserAddress, AppUserAddressDTO>().ReverseMap();
+            CreateMap<AppUserAddress,AppUserDTO>().ReverseMap();
         }
     }
 }
