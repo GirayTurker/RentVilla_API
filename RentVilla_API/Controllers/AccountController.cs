@@ -480,15 +480,28 @@ namespace RentVilla_API.Controllers
                 return BadRequest(_response);
             }
 
-            var modelDTO = _mapper.Map(updatedUserAddress, userAddress);
-            await _userRepository.UpdateUserAddressAsync(modelDTO);
+            try 
+            {
+                var modelDTO = _mapper.Map(updatedUserAddress, userAddress);
+                await _userRepository.UpdateUserAddressAsync(modelDTO);
 
-            _response.StatusCode = HttpStatusCode.OK;
-            _response.ResponseIsSuccessfull = true;
-            _response.ErrorMessages=null;
-            _loggerDev.Log($"Edit User Address: -- {id} -- is NOT match or 0", "error");
-            _response.Result = updatedUserAddress;
-            return Ok(_response);
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.ResponseIsSuccessfull = true;
+                _response.ErrorMessages = null;
+                _loggerDev.Log($"Edit User Address: -- {id} -- is NOT match or 0", "error");
+                _response.Result = updatedUserAddress;
+                return Ok(_response);
+            }
+
+            catch (Exception ex) 
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.ResponseIsSuccessfull = false;
+                _response.ErrorMessages.Add("Exception thrown to Logs!");
+                _loggerDev.Log(ex.Message.ToString(), "error");
+                return BadRequest(_response);
+            }
+            
         }
 
         [HttpDelete("deleteUser")]
