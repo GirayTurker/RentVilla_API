@@ -15,6 +15,7 @@ using Serilog;
 using System.Data;
 using System.Data.Common;
 using System.Net;
+using System.Net.Mime;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -365,78 +366,129 @@ namespace RentVilla_API.Controllers
             
         }
 
-        [HttpPatch("editUser")]
-        public async Task<ActionResult<APIResponse>>EditWithAdo(int id, JsonPatchDocument<AppUserDTO> appUserDTO)
+        //Will use for future referances - DO NOT DELETE!
+        //[HttpPatch("editUser")]
+        //public async Task<ActionResult<APIResponse>> EditWithAdo(int id, JsonPatchDocument<AppUserDTO> appUserDTO)
+        //{
+
+        //    /*
+        //     * "path": "username",
+        //    "op": "replace",
+        //    "value": "test"
+        //     */
+
+        //    if (id == 0)
+        //    {
+        //        _response.StatusCode = HttpStatusCode.NotFound;
+        //        _response.ResponseIsSuccessfull = false;
+        //        _response.ErrorMessages.Add($"User does NOT exist!");
+        //        _response.Result = null;
+        //        return NotFound(_response);
+        //    }
+
+        //    var conStr = await Task.Run(() => (SqlConnection)_appDBContext.Database.GetDbConnection());
+        //    // Check if the update operation is targeting an allowed column
+        //    if (_notAllowedProperties.Contains(appUserDTO.Operations[0].path))
+        //    {
+        //        _loggerDev.Log("Updating this data is not allowed.", "error");
+        //        _response.StatusCode = HttpStatusCode.BadRequest;
+        //        _response.ResponseIsSuccessfull = false;
+        //        _response.ErrorMessages.Add($"Updating {appUserDTO.Operations[0].path} data is not allowed.");
+        //        _response.Result = null;
+        //        return BadRequest(_response);
+        //    }
+
+        //    SqlCommand cmd = new SqlCommand("update users set " + appUserDTO.Operations[0].path + "='" + appUserDTO.Operations[0].value + "'where Id=" + id + "", conStr);
+        //    _loggerDev.Log($"VALUE:: {appUserDTO.Operations[0].path} CAHANGED WITH:: {appUserDTO.Operations[0].value}", "warning");
+
+        //    if (appUserDTO.Operations[0].value == null)
+        //    {
+        //        _response.StatusCode = HttpStatusCode.NotFound;
+        //        _response.ResponseIsSuccessfull = false;
+        //        _response.ErrorMessages.Add($"User does NOT exist!");
+        //        _response.Result = null;
+        //        return NotFound(_response);
+        //    }
+
+        //    try
+        //    {
+
+        //        conStr.Open();
+        //        int x = await cmd.ExecuteNonQueryAsync();
+        //        conStr.Close();
+        //        if (x > 0)
+        //        {
+        //            _loggerDev.Log("Changes saved in DataBase", "info");
+        //            _response.StatusCode = HttpStatusCode.OK;
+        //            _response.ResponseIsSuccessfull = true;
+        //            _response.ErrorMessages = null;
+        //            _response.Result = appUserDTO;
+        //            return Ok(_response);
+        //        }
+        //        else
+        //        {
+        //            return BadRequest(_response);
+        //        }
+
+        //    }
+        //    catch (Exception ef)
+        //    {
+        //        _response.StatusCode = HttpStatusCode.BadRequest;
+        //        _response.ResponseIsSuccessfull = false;
+        //        _response.ErrorMessages.Add("Exception thrown to Logs!");
+        //        return BadRequest(ef.Message);
+        //    }
+
+        //}
+
+        //PARTIAL UPDATE!
+        [HttpPut("EditUserAdress")]
+        public async Task<ActionResult<APIResponse>> EditUserAddress(int id, AppUserAddressDTO updatedUserAddress)
         {
 
-            /*
-             * "path": "username",
-            "op": "replace",
-            "value": "test"
-             */
+            var user = await _userRepository.GetUserByIdAsync(id);
 
-            if(id == 0 )
-            {              
-                _response.StatusCode = HttpStatusCode.NotFound;
-                _response.ResponseIsSuccessfull = false;
-                _response.ErrorMessages.Add($"User does NOT exist!");
-                _response.Result = null;
-                return NotFound(_response);
-            }
-
-            var conStr = await Task.Run(()=>(SqlConnection)_appDBContext.Database.GetDbConnection()) ;
-            // Check if the update operation is targeting an allowed column
-            if (_notAllowedProperties.Contains(appUserDTO.Operations[0].path))
+            if (user == null)
             {
-                _loggerDev.Log("Updating this data is not allowed.", "error");
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
-                _response.ErrorMessages.Add($"Updating {appUserDTO.Operations[0].path} data is not allowed.");
+                _response.ErrorMessages.Add("Invalid User");
+                _loggerDev.Log($"Edit User Address: -- {id} -- is NOT match or 0", "error");
                 _response.Result = null;
                 return BadRequest(_response);
             }
-            
-            SqlCommand cmd = new SqlCommand("update users set " + appUserDTO.Operations[0].path + "='" + appUserDTO.Operations[0].value + "'where Id=" + id + "", conStr);
-            _loggerDev.Log($"VALUE:: {appUserDTO.Operations[0].path} CAHANGED WITH:: {appUserDTO.Operations[0].value}", "warning");
 
-            if(appUserDTO.Operations[0].value == null)
-            {
-                _response.StatusCode = HttpStatusCode.NotFound;
-                _response.ResponseIsSuccessfull = false;
-                _response.ErrorMessages.Add($"User does NOT exist!");
-                _response.Result = null;
-                return NotFound(_response);
-            }
+            var userAddress = await _appDBContext.UsersAddress.FirstOrDefaultAsync(a => a.AppuserID == user.Id);
 
-            try
-            {
-
-                conStr.Open();
-                int x = await cmd.ExecuteNonQueryAsync();
-                conStr.Close();
-                if (x > 0) 
-                {
-                    _loggerDev.Log("Changes saved in DataBase", "info");
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.ResponseIsSuccessfull = true;
-                    _response.ErrorMessages = null;
-                    _response.Result = appUserDTO;
-                    return Ok(_response);
-                }
-                else 
-                {
-                    return BadRequest(_response);
-                }
-                
-            }
-            catch (Exception ef)
+            if (userAddress == null)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
-                _response.ErrorMessages.Add("Exception thrown to Logs!");
-                return BadRequest(ef.Message);  
+                _response.ErrorMessages.Add("Invalid User");
+                _loggerDev.Log($"Edit User Address: -- {id} -- is NOT match or 0", "error");
+                _response.Result = null;
+                return BadRequest(_response);
             }
 
+            if (updatedUserAddress.AppuserID != id) 
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.ResponseIsSuccessfull = false;
+                _response.ErrorMessages.Add("Invalid User");
+                _loggerDev.Log($"Edit User Address: -- {id} -- is NOT matching with {updatedUserAddress.AppuserID}", "error");
+                _response.Result = null;
+                return BadRequest(_response);
+            }
+
+            var modelDTO = _mapper.Map(updatedUserAddress, userAddress);
+            await _userRepository.UpdateUserAddressAsync(modelDTO);
+
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.ResponseIsSuccessfull = true;
+            _response.ErrorMessages=null;
+            _loggerDev.Log($"Edit User Address: -- {id} -- is NOT match or 0", "error");
+            _response.Result = updatedUserAddress;
+            return Ok(_response);
         }
 
         [HttpDelete("deleteUser")]
@@ -466,29 +518,6 @@ namespace RentVilla_API.Controllers
                     _loggerDev.Log($"Delete User: -- {id} -- NOT FOUND!", "error");
                     return NotFound(_response);
                 }
-
-                //using var hmac = new HMACSHA512(getUser.PasswordSalt);
-                //_loggerDev.Log("Get User Password Salt from DataBase to Login", "info");
-
-                //var computedHash = ComputeHashValue(hmac, userPass);
-                //_loggerDev.Log("Calculate HashValue to Login", "info");
-
-                //for (int i = 0; computedHash.Length > i; i++)
-                //{
-                //    _loggerDev.Log("Start to compare calculated hash value with stored hash value for: " + i, "info");
-                //    if (computedHash[i] != getUser.PasswordHash[i])
-                //    {
-                //        _response.StatusCode = HttpStatusCode.Unauthorized;
-                //        _response.ResponseIsSuccessfull = false;
-                //        _response.ErrorMessages.Add("Invalid Password");
-                //        _response.Result = _mapper.Map<AppUserDTO>(appUserDTO);
-                //        _loggerDev.Log("Login Failed: Password hash values are not equal!", "error");
-                //        return Unauthorized(_response);
-                //    }
-                //    return Ok(_response);
-                //}
-
-
                 
                 await _userRepository.RemoveUserAsync(getUser);
                 _response.StatusCode = HttpStatusCode.OK;
@@ -528,8 +557,8 @@ namespace RentVilla_API.Controllers
         }
 
 
-        [HttpGet("SearchAppUsers")]
-        public async Task<ActionResult<APIResponse>> GetAppUsers( string searchByUserNameOrEmail = null)
+        [HttpGet("SearchAppUser")]
+        public async Task<ActionResult<APIResponse>> SearchAppUser( string searchByUserNameOrEmail = null)
         {
             // Retrieve all users
             var usersDTO = await _userRepository.GetAppUsersDTOAsync();

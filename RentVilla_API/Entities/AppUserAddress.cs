@@ -6,7 +6,6 @@ namespace RentVilla_API.Entities
     public class AppUserAddress
     {
         // 1 to Many (1 User can have many addresses)
-        [Required]
         public int Id { get; set; }
 
         [Required]

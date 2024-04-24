@@ -1,7 +1,12 @@
-﻿namespace RentVilla_API.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace RentVilla_API.DTOs
 {
     public class AppUserAddressDTO
     {
+        [Required]
+        public int AppuserID { get; set; }
+
         public string PhoneNumber { get; set; }
         public string AddressLine1 { get; set; }
         public string AddressLine2 { get; set; }

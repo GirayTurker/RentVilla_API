@@ -8,7 +8,7 @@ namespace RentVilla_API.Interfaces
     {
         void update (AppUser user);
 
-        Task<bool> SaveAllAsnync();
+        Task<bool> SaveAllAsync();
 
         //Task<IEnumerable<AppUser>> GetUsersAsync();
 
@@ -17,7 +17,10 @@ namespace RentVilla_API.Interfaces
         Task<AppUser> GetUserByIdAsync (int id);
 
 
-        Task<AppUser> UpdateAsync(AppUser entity);
+        Task<AppUser> UpdateUserAsync(AppUser entity);
+
+        //PARTIAL UPDATE
+        Task<AppUserAddress> UpdateUserAddressAsync(AppUserAddress appUserAddress);
 
         Task<AppUser> RemoveUserAsync(AppUser entity);
 

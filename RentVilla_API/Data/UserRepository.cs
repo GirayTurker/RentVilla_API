@@ -7,6 +7,7 @@ using RentVilla_API.Entities;
 using RentVilla_API.Interfaces;
 using RentVilla_API.Logger;
 using RentVilla_API.Logger.LoogerInterfaces;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -64,7 +65,7 @@ namespace RentVilla_API.Data
         }
 
         
-        public async Task<bool> SaveAllAsnync()
+        public async Task<bool> SaveAllAsync()
         {
             _logger.Log("User Repository:  Check if Changes are saved successfully!!", "info");
             return await _appdbContext.SaveChangesAsync() > 0;
@@ -76,13 +77,32 @@ namespace RentVilla_API.Data
             _appdbContext.Entry(user).State = EntityState.Modified;
         }
 
-        public async Task<AppUser> UpdateAsync(AppUser entity)
+        public async Task<AppUser> UpdateUserAsync(AppUser entity)
         {
             _logger.Log("User Repository: Update AppUser", "info");
             _appdbContext.Users.Update(entity);
             await _appdbContext.SaveChangesAsync();
             return entity;
         }
+
+        //Whole Data Update
+        //public async Task<AppUserAddress> UpdateUserAddressAsync(AppUserAddress appUserAddress)
+        //{
+        //    _logger.Log("User Repository: Update AppUser", "info");
+        //    _appdbContext.UsersAddress.Update(appUserAddress);
+        //    await _appdbContext.SaveChangesAsync();
+        //    return appUserAddress;
+        //}
+
+        //PARTIAL UPDATE!
+        public async Task<AppUserAddress> UpdateUserAddressAsync(AppUserAddress appUserAddress)
+        {
+            _logger.Log("User Repository: Update AppUser", "info");
+            _appdbContext.Entry(appUserAddress).State = EntityState.Modified;
+            await _appdbContext.SaveChangesAsync();
+            return appUserAddress;
+        }
+
 
         public async Task<AppUser> RemoveUserAsync(AppUser entity)
         {
@@ -94,5 +114,6 @@ namespace RentVilla_API.Data
             return entity;
         }
 
+        
     }
 }
