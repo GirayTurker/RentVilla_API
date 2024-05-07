@@ -1,29 +1,21 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Azure;
-using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using RentVilla_API.Data;
 using RentVilla_API.DTOs;
 using RentVilla_API.Entities;
 using RentVilla_API.Interfaces;
 using RentVilla_API.Logger.LoogerInterfaces;
-using Serilog;
 using System.Data;
-using System.Data.Common;
 using System.Net;
-using System.Net.Mime;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace RentVilla_API.Controllers
 {
+
     public class AccountController : BaseAPIController
     {
         private readonly ITokenService _tokenService;
@@ -32,25 +24,36 @@ namespace RentVilla_API.Controllers
         private readonly AppDBContext _appDBContext;
         protected APIResponse _response;
         private readonly IMapper _mapper;
-        private readonly List<string> _notAllowedProperties = new List<string> { "username", "email", "passwordhash", "passwordsalt", "created" };
+        //private readonly List<string> _notAllowedProperties = new List<string> { "username", "email", "passwordhash", "passwordsalt", "created" };
 
-        public AccountController(ITokenService tokenService, AppDBContext appDBContext, ILoggerDev loggerDev,
-            IUserRepository userRepository, IMapper mapper)
+        public AccountController(ITokenService tokenService, AppDBContext appDBContext,
+            IUserRepository userRepository, IMapper mapper, ILoggerDev loggerDev)
         {
             _tokenService = tokenService;
             _appDBContext = appDBContext;
-            _loggerDev = loggerDev;
             _userRepository = userRepository;
             _response = new();
             _mapper = mapper;
+            _loggerDev = loggerDev;
         }
 
-        
+
         [HttpPost("register")] // api/account/register
 
         public async Task<ActionResult<APIResponse>> Register(RegisterDTO registerDTO)
         {
             bool checkUnique = await IsUniqueUser(registerDTO);
+            bool activate = false;
+
+            if (!activate)
+            {
+                _response.StatusCode = HttpStatusCode.NotFound;
+                _response.ResponseIsSuccessfull = false;
+                _response.ErrorMessages.Add($"Feature is deactivated by IYSsoft! Please contact with {new Uri("https://iyssoft.com/")}");
+                _response.Result = null;
+                _loggerDev.Log("Feature is deactivaed by IYSSoft", "error");
+                return NotFound(_response);
+            }
 
             if (!checkUnique)
             {
@@ -59,7 +62,7 @@ namespace RentVilla_API.Controllers
                 _response.ErrorMessages.Add("Email is already exist!!");
                 _response.Result = registerDTO.Email;
                 _loggerDev.Log("Email already exist", "error");
-                return BadRequest(_response); ;
+                return BadRequest(_response);
             }
 
             if (registerDTO.Email == null || registerDTO.Password == null)
@@ -146,13 +149,15 @@ namespace RentVilla_API.Controllers
 
         }
 
+
+        [Authorize]
         [HttpPatch("changeUserPass")]
 
         public async Task<ActionResult<APIResponse>> ChangeUserPassword(ChangePasswordDTO changePasswordDTO, int id)
         {
             var user = await _appDBContext.Users.SingleOrDefaultAsync(user => user.Id == id);
 
-            if (user == null || id==0) 
+            if (user == null || id == 0)
             {
                 _response.StatusCode = HttpStatusCode.Unauthorized;
                 _response.ResponseIsSuccessfull = false;
@@ -201,7 +206,7 @@ namespace RentVilla_API.Controllers
             using var hmacNewPass = new HMACSHA512();
             _loggerDev.Log("New hmac created for NEW Password", "info");
 
-            try 
+            try
             {
                 user.PasswordSalt = hmacNewPass.Key;
                 user.PasswordHash = ComputeHashValue(hmacNewPass, changePasswordDTO.NewPassword);
@@ -223,8 +228,8 @@ namespace RentVilla_API.Controllers
                 _loggerDev.Log("Password change is Successfull!", "info");
                 return Ok(_response);
             }
-            
-            catch (Exception ex) 
+
+            catch (Exception ex)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
@@ -232,8 +237,9 @@ namespace RentVilla_API.Controllers
                 _loggerDev.Log(ex.Message.ToString(), "error");
                 return BadRequest(_response);
             }
-            
+
         }
+
 
         [HttpPost("login")]
         public async Task<ActionResult<APIResponse>> Login(LoginDTO loginDTO)
@@ -301,14 +307,14 @@ namespace RentVilla_API.Controllers
 
         }
 
-
+        [Authorize]
         [HttpPost("UserAddress")]
 
         public async Task<ActionResult<APIResponse>> CreateUserAddress(AppUserAddressDTO appUserAddress, int id)
         {
-           var userId =  await _userRepository.GetUserByIdAsync(id);
+            var userId = await _userRepository.GetUserByIdAsync(id);
 
-            if (userId == null || id==0) 
+            if (userId == null || id == 0)
             {
                 _response.StatusCode = HttpStatusCode.NotFound;
                 _response.ResponseIsSuccessfull = false;
@@ -319,18 +325,18 @@ namespace RentVilla_API.Controllers
             }
 
             var phoneNumCheck = IsPhoneNumberValid(appUserAddress.PhoneNumber);
-            
-            if(!phoneNumCheck)
+
+            if (!phoneNumCheck)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
                 _response.ErrorMessages.Add($"{appUserAddress.PhoneNumber} is incorrect format");
                 _response.Result = null;
-                _loggerDev.Log($"Create AppUserAddress: {appUserAddress.PhoneNumber} is incorrect format","error");
+                _loggerDev.Log($"Create AppUserAddress: {appUserAddress.PhoneNumber} is incorrect format", "error");
                 return BadRequest(_response);
             }
 
-            try 
+            try
             {
                 var appUserAddressCreate = new AppUserAddress
                 {
@@ -340,7 +346,7 @@ namespace RentVilla_API.Controllers
                     PhoneNumber = appUserAddress.PhoneNumber,
                     AddressLine1 = appUserAddress.AddressLine1,
                     AddressLine2 = appUserAddress.AddressLine2,
-                    ZipCode = appUserAddress.ZipCode,
+                    ZipCode = (short)appUserAddress.ZipCode,
                     State = appUserAddress.State,
                     City = appUserAddress.City,
                     Created = DateTime.Now
@@ -349,13 +355,13 @@ namespace RentVilla_API.Controllers
                 await _appDBContext.AddAsync(appUserAddressCreate);
                 await _appDBContext.SaveChangesAsync();
                 _response.StatusCode = HttpStatusCode.OK;
-                _response.ResponseIsSuccessfull=true;
+                _response.ResponseIsSuccessfull = true;
                 _response.ErrorMessages = null;
                 _response.Result = appUserAddress;
 
                 return Ok(_response);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
@@ -363,7 +369,7 @@ namespace RentVilla_API.Controllers
                 _loggerDev.Log(ex.Message.ToString(), "error");
                 return BadRequest(_response);
             }
-            
+
         }
 
         //Will use for future referances - DO NOT DELETE!
@@ -441,6 +447,7 @@ namespace RentVilla_API.Controllers
 
         //}
 
+        [Authorize]
         //PARTIAL UPDATE!
         [HttpPut("EditUserAdress")]
         public async Task<ActionResult<APIResponse>> EditUserAddress(int id, AppUserAddressDTO updatedUserAddress)
@@ -470,7 +477,7 @@ namespace RentVilla_API.Controllers
                 return BadRequest(_response);
             }
 
-            if (updatedUserAddress.AppuserID != id) 
+            if (updatedUserAddress.AppuserID != id)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
@@ -480,7 +487,7 @@ namespace RentVilla_API.Controllers
                 return BadRequest(_response);
             }
 
-            try 
+            try
             {
                 var modelDTO = _mapper.Map(updatedUserAddress, userAddress);
                 await _userRepository.UpdateUserAddressAsync(modelDTO);
@@ -488,12 +495,12 @@ namespace RentVilla_API.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.ResponseIsSuccessfull = true;
                 _response.ErrorMessages = null;
-                _loggerDev.Log($"Edit User Address: -- {id} -- is NOT match or 0", "error");
+                _loggerDev.Log($"Edit User Address: -- {Newtonsoft.Json.JsonConvert.SerializeObject(updatedUserAddress)} -- is SUCCESSFUL", "info");
                 _response.Result = updatedUserAddress;
                 return Ok(_response);
             }
 
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
@@ -501,16 +508,17 @@ namespace RentVilla_API.Controllers
                 _loggerDev.Log(ex.Message.ToString(), "error");
                 return BadRequest(_response);
             }
-            
+
         }
 
+        [Authorize]
         [HttpDelete("deleteUser")]
         public async Task<ActionResult<APIResponse>> DeleteUser(int id)
 
         {
-            try 
+            try
             {
-                if (id == 0) 
+                if (id == 0)
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     _response.ResponseIsSuccessfull = false;
@@ -520,7 +528,7 @@ namespace RentVilla_API.Controllers
                     return BadRequest(_response);
                 }
 
-                var getUser = await _appDBContext.Users.FirstOrDefaultAsync(user => user.Id ==id);
+                var getUser = await _appDBContext.Users.FirstOrDefaultAsync(user => user.Id == id);
 
                 if (getUser == null)
                 {
@@ -531,7 +539,7 @@ namespace RentVilla_API.Controllers
                     _loggerDev.Log($"Delete User: -- {id} -- NOT FOUND!", "error");
                     return NotFound(_response);
                 }
-                
+
                 await _userRepository.RemoveUserAsync(getUser);
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.ResponseIsSuccessfull = true;
@@ -541,7 +549,7 @@ namespace RentVilla_API.Controllers
                 return Ok(_response);
 
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
@@ -550,12 +558,12 @@ namespace RentVilla_API.Controllers
                 return BadRequest(_response);
             }
         }
-  
 
+        [Authorize]
         [HttpGet("AppUsers")]
-        public async Task<ActionResult<IEnumerable<APIResponse>>> GetAppUsers()
+        public async Task<ActionResult<APIResponse>> PaginatedAppUsersAsync(int pageNumber = 1, int pageSize = 5)//Page Will Show only 5 USERS from DB
         {
-            var usersDTO = await _userRepository.GetAppUsersDTOAsync();
+            var usersDTO = await _userRepository.GetPagedAppUsersDTOAsync(pageNumber, pageSize);
 
             if (usersDTO == null)
             {
@@ -565,16 +573,22 @@ namespace RentVilla_API.Controllers
                 _loggerDev.Log($"Get App Users: NO User Found!!!", "error");
                 return NotFound(_response);
             }
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.ResponseIsSuccessfull = true;
+            _response.ErrorMessages = null;
+            _response.Result = usersDTO;
 
-            return Ok(usersDTO);
+
+            return Ok(_response);
         }
 
 
+        [Authorize]
         [HttpGet("SearchAppUser")]
-        public async Task<ActionResult<APIResponse>> SearchAppUser( string searchByUserNameOrEmail = null)
+        public async Task<ActionResult<APIResponse>> SearchAppUserAsync(string searchByUserNameOrEmail)
         {
             // Retrieve all users
-            var usersDTO = await _userRepository.GetAppUsersDTOAsync();
+            var usersDTO = await _userRepository.GetAllAppUsersDTOForSearchAsync(searchByUserNameOrEmail);
 
             // If no search term is provided, return all users
             if (string.IsNullOrWhiteSpace(searchByUserNameOrEmail))
@@ -586,7 +600,7 @@ namespace RentVilla_API.Controllers
                 return BadRequest(_response);
             }
 
-            if (usersDTO == null)
+            if (usersDTO == null || !usersDTO.Any())
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.ResponseIsSuccessfull = false;
@@ -598,18 +612,12 @@ namespace RentVilla_API.Controllers
 
             try
             {
-                // Otherwise, perform the search based on the provided search term
-                var filteredUsersDTO = usersDTO
-                    .Where(u =>
-                        u.UserName.Contains(searchByUserNameOrEmail, StringComparison.OrdinalIgnoreCase) || // Search by user name
-                        u.Email.Contains(searchByUserNameOrEmail, StringComparison.OrdinalIgnoreCase) // Search by email
-                    );
-
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.ResponseIsSuccessfull = true;
                 _response.ErrorMessages = null;
-                _response.Result = filteredUsersDTO;
+                _response.Result = usersDTO;
                 _loggerDev.Log($"Search User: {searchByUserNameOrEmail} FOUND", "info");
+                _loggerDev.Log($"Search User Found As: {Newtonsoft.Json.JsonConvert.SerializeObject(usersDTO)} FOUND", "info");
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -624,9 +632,9 @@ namespace RentVilla_API.Controllers
 
 
         private byte[] ComputeHashValue(HMACSHA512 hmac, string objAndParam)
-        {           
+        {
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(objAndParam));
-            if(computedHash == null) 
+            if (computedHash == null)
             {
                 _loggerDev.Log("Hash Value can not compute!!", "error");
             }
@@ -638,7 +646,7 @@ namespace RentVilla_API.Controllers
         {
             var regexPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$";
             _loggerDev.Log("Check if User registeration password is matching with regex pattern", "info");
-            return Regex.IsMatch(password, regexPattern) && password.Length >=8;
+            return Regex.IsMatch(password, regexPattern) && password.Length >= 8;
         }
 
         private bool IsEmailValid(string email)
@@ -653,7 +661,7 @@ namespace RentVilla_API.Controllers
             return Regex.IsMatch(email, regexPattern) && email.Length >= 6;
         }
 
-        private Task<string> GetuserNameFromEmail(RegisterDTO registerDTO) 
+        private Task<string> GetuserNameFromEmail(RegisterDTO registerDTO)
         {
             int atIndex = registerDTO.Email.IndexOf("@");
             string username = registerDTO.Email.Substring(0, atIndex);

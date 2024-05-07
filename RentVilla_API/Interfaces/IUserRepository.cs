@@ -1,5 +1,6 @@
 ﻿using RentVilla_API.DTOs;
 using RentVilla_API.Entities;
+using RentVilla_API.Helpers;
 using System.Text.Json;
 
 namespace RentVilla_API.Interfaces
@@ -10,9 +11,9 @@ namespace RentVilla_API.Interfaces
 
         Task<bool> SaveAllAsync();
 
-        //Task<IEnumerable<AppUser>> GetUsersAsync();
+        Task<IEnumerable<AppUserDTO>> GetAllAppUsersDTOForSearchAsync(string searchByUserNameOrEmail);
 
-        Task<IEnumerable<AppUserDTO>> GetAppUsersDTOAsync();
+        Task<Pagination<AppUserDTO>> GetPagedAppUsersDTOAsync(int pageSize, int pageNumber);
 
         Task<AppUser> GetUserByIdAsync (int id);
 

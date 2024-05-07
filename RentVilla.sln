@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34622.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RentVilla_API", "RentVilla_API\RentVilla_API.csproj", "{41E940CE-B507-40A0-8DF0-2CD1B38D3CA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RentVilla_API", "RentVilla_API\RentVilla_API.csproj", "{41E940CE-B507-40A0-8DF0-2CD1B38D3CA5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rent_API", "Rent_API\Rent_API.csproj", "{16D7C3E3-7CAF-4C40-9A69-3ED961F7AE2A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{41E940CE-B507-40A0-8DF0-2CD1B38D3CA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41E940CE-B507-40A0-8DF0-2CD1B38D3CA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41E940CE-B507-40A0-8DF0-2CD1B38D3CA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16D7C3E3-7CAF-4C40-9A69-3ED961F7AE2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16D7C3E3-7CAF-4C40-9A69-3ED961F7AE2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16D7C3E3-7CAF-4C40-9A69-3ED961F7AE2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16D7C3E3-7CAF-4C40-9A69-3ED961F7AE2A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
