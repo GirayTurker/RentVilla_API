@@ -23,7 +23,7 @@ v-1.0.0 to v-1.1.0
 # UNDER DEVELOPMENT
 
 - RentVilla .NET Core 8 MVC
-- Admin Panel View w.out CRUD operations
+- Admin Panel View w.out CUD operations
 
 <img src="https://github.com/GirayTurker/RentVilla_API/assets/89690556/1f7fb596-c1ab-472e-8e04-2c39a162c9d1" alt="RowUsersList" width="500">
 
